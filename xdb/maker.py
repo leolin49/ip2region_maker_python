@@ -45,6 +45,7 @@
 # | 4bytes		| 4bytes	| 2bytes		| 4 bytes    |
 # +------------+-----------+---------------+------------+
 #  start ip 	  end ip	  data length     data ptr
+import io
 import os
 import struct
 import sys
@@ -73,22 +74,24 @@ class Maker:
     vector_index = None
 
     def __init__(self, sh, dh, ip, sg, rp, vi):
-        self.src_handle = open(sh, mode='r', encoding='utf-8')
-        self.dst_handle = open(dh, mode='wb')
+        self.src_handle = sh
+        self.dst_handle = dh
         self.index_policy = ip
         self.segments = sg
         self.region_pool = rp
         self.vector_index = vi
 
-    # init the binary file
     def init(self):
-        # init the db header
+        """
+        Init the `xdb` binary file.
+        1. init the file header
+        2. load all the segments
+        """
         self.init_db_header()
-
-        # load all the segments
         self.load_segments()
 
     def init_db_header(self):
+        """Init and write the file header to the destination xdb file."""
         logging.info("try to init the db header ... ")
         self.src_handle.seek(0, 0)
 
@@ -104,11 +107,14 @@ class Maker:
         header[8:12] = int(0).to_bytes(4, byteorder="little")
         # 5. index block end ptr
         header[12:16] = int(0).to_bytes(4, byteorder="little")
-
+        # write header buffer to file
         self.dst_handle.write(header)
-        return
 
-    def load_segments(self):
+    def load_segments(self) -> list:
+        """
+        Load the segments [start ip|end ip|region] from source ip text file.
+        :return: the list of Segment
+        """
         logging.info("try to load the segments ... ")
         last = None
         s_tm = time.time()
@@ -119,36 +125,31 @@ class Maker:
             ps = line.split("|", maxsplit=2)
             if len(ps) != 3:
                 logging.error("invalid ip segment line `{}`".format(line))
-                return
+                return []
             sip = util.checkip(ps[0])
             if sip == -1:
                 logging.error("invalid ip address `{}`".format(line))
-                return
+                return []
             eip = util.checkip(ps[1])
             if eip == -1:
                 logging.error("invalid ip address `{}`".format(line))
-                return
+                return []
             if sip > eip:
                 logging.error("start ip({}) should not be greater than end ip({})".format(ps[0], ps[1]))
-                return
+                return []
             if len(ps[2]) < 1:
                 logging.error("empty region info in segment line `{}`".format(line))
-                return
-            segment = seg.Segment(
-                sip=sip,
-                eip=eip,
-                reg=ps[2]
-            )
+                return []
+            segment = seg.Segment(sip=sip, eip=eip, reg=ps[2])
 
             # check the continuity of data segment
             if last is not None:
                 if last.end_ip + 1 != segment.start_ip:
                     logging.error("discontinuous data segment: last.eip+1({})!=seg.sip({}, {})".format(sip, eip, ps[0]))
-                    return
+                    return []
 
             self.segments.append(segment)
             last = segment
-
         logging.info("all segments loaded, length: {}, elapsed: {}".format(len(self.segments), time.time() - s_tm))
 
     def set_vector_index(self, ip, ptr):
@@ -161,8 +162,8 @@ class Maker:
             vi_block.last_ptr = ptr + idx.SegmentIndexBlockSize
         self.vector_index[row][col] = vi_block
 
-    # start to make the binary file
     def start(self):
+        """Start to make the 'xdb' binary file."""
         if len(self.segments) < 1:
             logging.error("empty segment list")
             return
@@ -238,17 +239,32 @@ class Maker:
         logging.info("write done, dataBlocks: {}, indexBlocks: ({}, {}), indexPtr: ({}, {})".format(
             len(self.region_pool), len(self.segments), counter, start_index_ptr, end_index_ptr
         ))
-        return
 
-    # end of make the binary file
     def end(self):
-        self.src_handle.close()
-        self.dst_handle.close()
-        return
+        """End of make the 'xdb' binary file."""
+        try:
+            self.src_handle.close()
+            self.dst_handle.close()
+        except IOError as e:
+            logging.error(e)
+            sys.exit()
 
 
-def new_maker(policy: int, srcfile, dstfile: str) -> Maker:
-    return Maker(
-        srcfile, dstfile, policy, sg=[], rp={},
-        vi=[[idx.VectorIndexBlock() for _ in range(VectorIndexRows)] for _ in range(VectorIndexCols)],
-    )
+def new_maker(policy: int, srcfile: str, dstfile: str) -> Maker:
+    """Create a xdb Maker to make the xdb binary file
+    :param policy: index algorithm code 1:vector, 2:b-tree
+    :param srcfile: source ip text file path
+    :param dstfile: destination binary xdb file path
+    :return: the 'xdb' Maker
+    """
+    try:
+        sh = open(srcfile, mode='r', encoding='utf-8')
+        dh = open(dstfile, mode='wb')
+        return Maker(
+            sh=sh, dh=dh, ip=policy, sg=[], rp={},
+            vi=[[idx.VectorIndexBlock() for _ in range(VectorIndexRows)] for _ in range(VectorIndexCols)],
+        )
+    except IOError as e:
+        logging.error(e)
+        sys.exit()
+

@@ -9,6 +9,7 @@ import xdb.index as idx
 import xdb.searcher as sc
 import xdb.util as util
 
+# format log
 logging.basicConfig(level=logging.INFO, format='%(asctime)s-%(name)s-%(lineno)s-%(levelname)s - %(message)s')
 log = logging.getLogger(__name__)
 
@@ -51,10 +52,10 @@ def gen_db():
         print(" --src string    source ip text file path")
         print(" --dst string    destination binary xdb file path")
         return
-    # make the binary file
-    start_time = time.time()
-    maker = mk.new_maker(index_policy, src_file, dst_file)
 
+    start_time = time.time()
+    # make the binary file
+    maker = mk.new_maker(index_policy, src_file, dst_file)
     maker.init()
     maker.start()
     maker.end()
@@ -162,15 +163,15 @@ def test_bench():
         for line in lines:
             ps = line.split("|", maxsplit=2)
             if len(ps) != 3:
-                logging.error("invalid ip segment line `{}`".format(line))
+                print("invalid ip segment line `{}`".format(line))
                 return
             sip = util.checkip(ps[0])
             if sip == -1:
-                logging.error("invalid ip address `{}`".format(line))
+                print("invalid ip address `{}`".format(line))
                 return
             eip = util.checkip(ps[1])
             if eip == -1:
-                logging.error("invalid ip address `{}`".format(line))
+                print("invalid ip address `{}`".format(line))
                 return
             print("try to bench segment: `{}`", line)
             mip = util.mid_ip(sip, eip)

@@ -12,8 +12,8 @@ class Segment:
         self.start_ip, self.end_ip = sip, eip
         self.region = reg
 
-    # split the segment based on the pre-two bytes
     def split(self) -> list:
+        """Split the segment based on the pre-two bytes."""
         # 1, split the segment with the first byte
         t_list_1 = []
         s_byte_1, e_byte_1 = (self.start_ip >> 24) & 0xFF, (self.end_ip >> 24) & 0xFF
@@ -51,19 +51,19 @@ class Segment:
         return util.long2ip(self.start_ip) + "|" + util.long2ip(self.end_ip) + "|" + self.region
 
 
-def segment_from(seg: str) -> Segment:
-    segment = Segment()
-    ps = seg.split("|", 3)
-    if len(ps) != 3:
-        return segment
-
-    sip = util.checkip(ps[0])
-    if sip == -1:
-        return segment
-    eip = util.checkip(ps[1])
-    if eip == -1:
-        return segment
-
-    segment.start_ip, segment.end_ip = sip, eip
-    segment.region = ps[2]
-    return segment
+# def segment_from(seg: str) -> Segment:
+#     segment = Segment()
+#     ps = seg.split("|", 3)
+#     if len(ps) != 3:
+#         return segment
+#
+#     sip = util.checkip(ps[0])
+#     if sip == -1:
+#         return segment
+#     eip = util.checkip(ps[1])
+#     if eip == -1:
+#         return segment
+#
+#     segment.start_ip, segment.end_ip = sip, eip
+#     segment.region = ps[2]
+#     return segment

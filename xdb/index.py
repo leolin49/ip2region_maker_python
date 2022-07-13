@@ -14,12 +14,17 @@ def index_policy_from_string(s: str) -> int:
     elif sl == "btree":
         return BTreeIndexPolicy
     else:
+        print("invalid policy `{}`, used default vector index".format(s))
         return VectorIndexPolicy
 
 
 class VectorIndexBlock:
     first_ptr = 0
     last_ptr = 0
+
+    def __init__(self, fp=0, lp=0):
+        self.first_ptr = fp
+        self.last_ptr = lp
 
     def encode(self) -> bytes:
         return struct.pack("<II", self.first_ptr, self.last_ptr)
