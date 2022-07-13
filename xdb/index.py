@@ -8,6 +8,16 @@ BTreeIndexPolicy = 2
 SegmentIndexBlockSize = 14
 
 
+def index_policy_from_string(s: str) -> int:
+    sl = s.lower()
+    if sl == "vector":
+        return VectorIndexPolicy
+    elif sl == "btree":
+        return BTreeIndexPolicy
+    else:
+        return VectorIndexPolicy
+
+
 class VectorIndexBlock:
     first_ptr = 0
     last_ptr = 0

@@ -5,6 +5,7 @@ import xdb.maker
 import xdb.index
 import xdb.searcher
 import xdb.util
+import xdb
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s-%(name)s-%(lineno)s-%(levelname)s - %(message)s')
 log = logging.getLogger(__name__)
@@ -38,9 +39,7 @@ def gen_db():
         elif r[2:s_idx] == "dst":
             dst_file = r[s_idx+1:]
         elif r[2:s_idx] == "index":
-            # todo
-            pass
-            return
+            index_policy = xdb.index.index_policy_from_string(r[s_idx+1:])
         else:
             print("undefined option `{}`".format(r))
             return
@@ -97,7 +96,7 @@ def test_search():
             print("vector index cached")
             continue
         elif line == "clearIndex":
-            # todo clearIndex method
+            searcher.clearVectorIndex()
             continue
         elif line == "quit":
             break
@@ -106,7 +105,7 @@ def test_search():
 
         s_tm = time.time()
         region = searcher.search(ip)
-        print(region)
+        print("\x1b[0;32m[region:{}, iocount:{}, took:{}s]\x1b[0m\n".format(region, 0, time.time() - s_tm))
 
 
 def main():

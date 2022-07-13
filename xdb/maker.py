@@ -95,7 +95,6 @@ class Maker:
         self.src_handle.seek(0, 0)
 
         header = bytearray([0]*256)
-        # struct.pack_into("<HHIII", header, 0, VersionNo, self.index_policy, int(time.time()), 0, 0)
         # make and write the header space
         # 1. version number
         header[0:2] = VersionNo.to_bytes(2, byteorder="little")
@@ -113,7 +112,7 @@ class Maker:
 
     def load_segments(self):
         logging.info("try to load the segments ... ")
-        last = seg.Segment()
+        last = None
         s_tm = time.time()
 
         lines = self.src_handle.read().splitlines()
@@ -127,10 +126,10 @@ class Maker:
             sip = util.check_ip(ps[0])
             eip = util.check_ip(ps[1])
             if sip > eip:
-                print("start ip({}) should not be greater than end ip({})".format(ps[0], ps[1]))
+                logging.error("start ip({}) should not be greater than end ip({})".format(ps[0], ps[1]))
                 return
             if len(ps[2]) < 1:
-                print("empty region info in segment line `{}`".format(line))
+                logging.error("empty region info in segment line `{}`".format(line))
                 return
             segment = seg.Segment(
                 sip=sip,
@@ -139,11 +138,15 @@ class Maker:
             )
 
             # check the continuity of data segment
-            # todo
+            if last is not None:
+                if last.end_ip + 1 != segment.start_ip:
+                    logging.error("discontinuous data segment: last.eip+1({})!=seg.sip({}, {})".format(sip, eip, ps[0]))
+                    return
 
             self.segments.append(segment)
+            last = segment
 
-        print("all segments loaded, length: {}, elapsed: {}".format(len(self.segments), time.time() - s_tm))
+        logging.info("all segments loaded, length: {}, elapsed: {}".format(len(self.segments), time.time() - s_tm))
 
     def set_vector_index(self, ip, ptr):
         row, col = (ip >> 24) & 0xFF, (ip >> 16) & 0xFF
@@ -177,15 +180,18 @@ class Maker:
 
             # get the first ptr of the next region
             pos = self.dst_handle.seek(0, 1)
+            logging.info("{} {} {}".format(pos, region, s.region))
             self.dst_handle.write(region)
             self.region_pool[s.region] = pos
             logging.info(" --[Added] with ptr={}".format(pos))
-
         # 2. write the index block and cache the super index block
         logging.info("try to write the segment index block ... ")
         counter, start_index_ptr, end_index_ptr = 0, -1, -1
         for sg in self.segments:
-            if sg.region not in self.region_pool:
+            data_ptr = -1
+            if sg.region in self.region_pool:
+                data_ptr = self.region_pool[sg.region]
+            else:
                 logging.error("missing ptr cache for region `{}`".format(sg.region))
                 return
 
@@ -200,10 +206,7 @@ class Maker:
                 pos = self.dst_handle.seek(0, 1)
 
                 s_index = idx.SegmentIndexBlock(
-                    sip=s.start_ip,
-                    eip=s.end_ip,
-                    dl=data_len,
-                    dp=pos
+                    sip=s.start_ip, eip=s.end_ip, dl=data_len, dp=data_ptr
                 )
                 self.dst_handle.write(s_index.encode())
                 logging.info("|-segment index: {}, ptr: {}, segment: {}".format(counter, pos, s.string()))
