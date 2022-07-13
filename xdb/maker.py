@@ -117,11 +117,10 @@ class Maker:
 
         lines = self.src_handle.read().splitlines()
         for line in lines:
-            line = str(line)
             logging.info("load segment: `{}`".format(line))
             ps = line.split("|", maxsplit=2)
             if len(ps) != 3:
-                logging.error("invalid ip segment line `{}`, {}".format(line, ps))
+                logging.error("invalid ip segment line `{}`".format(line))
                 return
             sip = util.check_ip(ps[0])
             eip = util.check_ip(ps[1])

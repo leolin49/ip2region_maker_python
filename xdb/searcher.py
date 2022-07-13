@@ -31,10 +31,6 @@ class XdbSearcher(object):
             print("[Error]: %s" % e)
 
     @staticmethod
-    def clearVectorIndex():
-        pass
-
-    @staticmethod
     def loadContentFromFile(dbfile):
         try:
             f = io.open(dbfile, "rb")
