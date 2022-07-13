@@ -1,6 +1,5 @@
-# Copyright 2022 The Ip2Region Authors. All rights reserved.
-# Use of this source code is governed by a Apache2.0-style
-# license that can be found in the LICENSE file.
+#  Created by leolin49 on 2022/7/13.
+#  Copyright (C) 2022 leolin49. All rights reserved.
 import util
 
 
@@ -49,7 +48,7 @@ class Segment:
         return t_list_2
 
     def string(self) -> str:
-        return util.long_to_ip(self.start_ip) + "|" + util.long_to_ip(self.end_ip) + "|" + self.region
+        return util.long2ip(self.start_ip) + "|" + util.long2ip(self.end_ip) + "|" + self.region
 
 
 def segment_from(seg: str) -> Segment:
@@ -58,11 +57,11 @@ def segment_from(seg: str) -> Segment:
     if len(ps) != 3:
         return segment
 
-    sip = util.check_ip(ps[0])
-    if sip == 0:
+    sip = util.checkip(ps[0])
+    if sip == -1:
         return segment
-    eip = util.check_ip(ps[1])
-    if eip == 0:
+    eip = util.checkip(ps[1])
+    if eip == -1:
         return segment
 
     segment.start_ip, segment.end_ip = sip, eip

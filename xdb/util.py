@@ -1,12 +1,14 @@
-# Copyright 2022 The Ip2Region Authors. All rights reserved.
-# Use of this source code is governed by a Apache2.0-style
-# license that can be found in the LICENSE file.
+#  Created by leolin49 on 2022/7/13.
+#  Copyright (C) 2022 leolin49. All rights reserved.
 
 # Util function
 shift_index = (24, 16, 8, 0)
 
 
-def check_ip(ip: str):
+# checkip convert ip string to integer
+def checkip(ip: str) -> int:
+    if not is_ipv4(ip):
+        return -1
     ps = ip.split(".")
     if len(ps) != 4:
         return 0
@@ -19,9 +21,20 @@ def check_ip(ip: str):
     return val
 
 
-def long_to_ip(num: int):
+# long2ip convert integer to ip string
+def long2ip(num: int) -> str:
     return "{}.{}.{}.{}".format((num >> 24) & 0xFF, (num >> 16) & 0xFF, (num >> 8) & 0xFF, num & 0xFF)
 
 
 def mid_ip(sip, eip: int):
     return (sip + eip) >> 1
+
+
+def is_ipv4(ip: str) -> bool:
+    p = ip.split(".")
+    if len(p) != 4:
+        return False
+    for pp in p:
+        if not pp.isdigit() or len(pp) > 3 or int(pp) > 255:
+            return False
+    return True

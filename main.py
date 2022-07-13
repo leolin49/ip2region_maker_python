@@ -1,11 +1,13 @@
+#  Created by leolin49 on 2022/7/13.
+#  Copyright (C) 2022 leolin49. All rights reserved.
+
 import logging
 import sys
 import time
-import xdb.maker
-import xdb.index
-import xdb.searcher
-import xdb.util
-import xdb
+import xdb.maker as mk
+import xdb.index as idx
+import xdb.searcher as sc
+import xdb.util as util
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s-%(name)s-%(lineno)s-%(levelname)s - %(message)s')
 log = logging.getLogger(__name__)
@@ -22,7 +24,7 @@ def print_help():
 
 def gen_db():
     src_file, dst_file = "", ""
-    index_policy = xdb.index.VectorIndexPolicy
+    index_policy = idx.VectorIndexPolicy
     # check input argv
     for i in range(2, len(sys.argv)):
         r = sys.argv[i]
@@ -39,7 +41,7 @@ def gen_db():
         elif r[2:s_idx] == "dst":
             dst_file = r[s_idx+1:]
         elif r[2:s_idx] == "index":
-            index_policy = xdb.index.index_policy_from_string(r[s_idx+1:])
+            index_policy = idx.index_policy_from_string(r[s_idx+1:])
         else:
             print("undefined option `{}`".format(r))
             return
@@ -51,13 +53,13 @@ def gen_db():
         return
     # make the binary file
     start_time = time.time()
-    maker = xdb.maker.new_maker(index_policy, src_file, dst_file)
+    maker = mk.new_maker(index_policy, src_file, dst_file)
 
     maker.init()
     maker.start()
     maker.end()
 
-    logging.info("Done, elapsed: {}".format(time.time() - start_time))
+    logging.info("Done, elapsed: {:.0f}m{:.0f}s".format((time.time() - start_time) / 60, (time.time() - start_time) % 60))
 
 
 def test_search():
@@ -82,8 +84,8 @@ def test_search():
         print("options:")
         print(" --db string    ip2region binary xdb file path")
         return
-    cb = xdb.searcher.XdbSearcher.loadContentFromFile(dbfile=db_file)
-    searcher = xdb.searcher.XdbSearcher(contentBuff=cb)
+    cb = sc.XdbSearcher.loadContentFromFile(dbfile=db_file)
+    searcher = sc.XdbSearcher(contentBuff=cb)
     print("ip2region xdb search test program, commands:\nloadIndex : load the vector index for search "
           "speedup.\nclearIndex: clear the vector index.\nquit      : exit the test program")
     while True:
@@ -96,21 +98,22 @@ def test_search():
             print("vector index cached")
             continue
         elif line == "clearIndex":
-            # todo  clearVectorIndex method
+            # FIXME need to add 'clearVectorIndex' method in searcher
             pass
             # print("vector index cleared")
             continue
         elif line == "quit":
             break
 
-        ip = xdb.util.check_ip(line)
+        ip = util.checkip(line)
+        if ip == -1:
+            print("invalid ip address `{}`".format(line))
+            continue
 
         s_tm = time.time()
         region = searcher.search(ip)
-        # todo iocount
-        print("\x1b[0;32m[region:{}, took:{}m{}s]\x1b[0m\n".format(
-            region, (time.time() - s_tm) / 60, (time.time() - s_tm) % 60)
-        )
+        # TODO calculate io count in `searcher.search` method
+        print("\x1b[0;32m[region:{}, took:{:.0f}s]\x1b[0m".format(region, time.time() - s_tm))
 
 
 def test_bench():
@@ -151,8 +154,8 @@ def test_bench():
         print(" --ignore-error bool    keep going if bench failed")
         return
 
-    cb = xdb.searcher.XdbSearcher.loadContentFromFile(dbfile=db_file)
-    searcher = xdb.searcher.XdbSearcher(contentBuff=cb)
+    cb = sc.XdbSearcher.loadContentFromFile(dbfile=db_file)
+    searcher = sc.XdbSearcher(contentBuff=cb)
     cnt, err_cnt, s_tm = 0, 0, time.time()
     with open(src_file, 'r', encoding="utf-8") as f:
         lines = f.read().splitlines()
@@ -161,12 +164,18 @@ def test_bench():
             if len(ps) != 3:
                 logging.error("invalid ip segment line `{}`".format(line))
                 return
-            sip = xdb.util.check_ip(ps[0])
-            eip = xdb.util.check_ip(ps[1])
+            sip = util.checkip(ps[0])
+            if sip == -1:
+                logging.error("invalid ip address `{}`".format(line))
+                return
+            eip = util.checkip(ps[1])
+            if eip == -1:
+                logging.error("invalid ip address `{}`".format(line))
+                return
             print("try to bench segment: `{}`", line)
-            mip = xdb.util.mid_ip(sip, eip)
-            for ip in [sip, xdb.util.mid_ip(sip, mip), mip, xdb.util.mid_ip(mip, eip), eip]:
-                print("|-try to bench ip '{}' ...".format(xdb.util.long_to_ip(ip)))
+            mip = util.mid_ip(sip, eip)
+            for ip in [sip, util.mid_ip(sip, mip), mip, util.mid_ip(mip, eip), eip]:
+                print("|-try to bench ip '{}' ...".format(util.long2ip(ip)))
                 region = searcher.search(ip)
 
                 # check the region info

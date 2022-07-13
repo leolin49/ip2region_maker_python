@@ -1,6 +1,5 @@
-# Copyright 2022 The Ip2Region Authors. All rights reserved.
-# Use of this source code is governed by a Apache2.0-style
-# license that can be found in the LICENSE file.
+#  Created by leolin49 on 2022/7/13.
+#  Copyright (C) 2022 leolin49. All rights reserved.
 #
 # ----
 # ip2region database v2.0 structure
@@ -56,7 +55,6 @@ import segment as seg
 import index as idx
 import util
 
-ZeroCnt=0
 
 VersionNo = 2
 HeaderInfoLength = 256
@@ -122,8 +120,14 @@ class Maker:
             if len(ps) != 3:
                 logging.error("invalid ip segment line `{}`".format(line))
                 return
-            sip = util.check_ip(ps[0])
-            eip = util.check_ip(ps[1])
+            sip = util.checkip(ps[0])
+            if sip == -1:
+                logging.error("invalid ip address `{}`".format(line))
+                return
+            eip = util.checkip(ps[1])
+            if eip == -1:
+                logging.error("invalid ip address `{}`".format(line))
+                return
             if sip > eip:
                 logging.error("start ip({}) should not be greater than end ip({})".format(ps[0], ps[1]))
                 return
@@ -236,6 +240,7 @@ class Maker:
         ))
         return
 
+    # end of make the binary file
     def end(self):
         self.src_handle.close()
         self.dst_handle.close()
