@@ -1,9 +1,11 @@
-#  Created by leolin49 on 2022/7/13.
+#  Created by leolin49 on 2022/7/7.
 #  Copyright (C) 2022 leolin49. All rights reserved.
 
 import logging
 import sys
 import time
+from datetime import datetime
+
 import xdb.maker as mk
 import xdb.index as idx
 import xdb.searcher as sc
@@ -100,8 +102,7 @@ def test_search():
             continue
         elif line == "clearIndex":
             # FIXME need to add 'clearVectorIndex' method in searcher
-            pass
-            # print("vector index cleared")
+            print("vector index cleared")
             continue
         elif line == "quit":
             break
@@ -111,10 +112,12 @@ def test_search():
             print("invalid ip address `{}`".format(line))
             continue
 
-        s_tm = time.time()
+        s_tm = datetime.now()
         region = searcher.search(ip)
         # TODO calculate io count in `searcher.search` method
-        print("\x1b[0;32m[region:{}, took:{:.0f}s]\x1b[0m".format(region, time.time() - s_tm))
+        print("\x1b[0;32m[region:{}, took:{:.0f}s]\x1b[0m".format(
+            region, (datetime.now().microsecond - s_tm.microsecond) / 1000)
+        )
 
 
 def test_bench():
@@ -176,7 +179,7 @@ def test_bench():
             print("try to bench segment: `{}`", line)
             mip = util.mid_ip(sip, eip)
             for ip in [sip, util.mid_ip(sip, mip), mip, util.mid_ip(mip, eip), eip]:
-                print("|-try to bench ip '{}' ...".format(util.long2ip(ip)))
+                print("|-try to bench ip '{}' ...".format(util.long2ip(ip)), end="")
                 region = searcher.search(ip)
 
                 # check the region info

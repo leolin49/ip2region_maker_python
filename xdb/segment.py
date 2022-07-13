@@ -1,4 +1,4 @@
-#  Created by leolin49 on 2022/7/13.
+#  Created by leolin49 on 2022/7/7.
 #  Copyright (C) 2022 leolin49. All rights reserved.
 import util
 
@@ -51,19 +51,19 @@ class Segment:
         return util.long2ip(self.start_ip) + "|" + util.long2ip(self.end_ip) + "|" + self.region
 
 
-# def segment_from(seg: str) -> Segment:
-#     segment = Segment()
-#     ps = seg.split("|", 3)
-#     if len(ps) != 3:
-#         return segment
-#
-#     sip = util.checkip(ps[0])
-#     if sip == -1:
-#         return segment
-#     eip = util.checkip(ps[1])
-#     if eip == -1:
-#         return segment
-#
-#     segment.start_ip, segment.end_ip = sip, eip
-#     segment.region = ps[2]
-#     return segment
+def segment_from(seg: str) -> Segment:
+    segment = Segment()
+    ps = seg.split("|", 3)
+    if len(ps) != 3:
+        return segment
+
+    sip = util.checkip(ps[0])
+    if sip == -1:
+        return segment
+    eip = util.checkip(ps[1])
+    if eip == -1:
+        return segment
+
+    segment.start_ip, segment.end_ip = sip, eip
+    segment.region = ps[2]
+    return segment

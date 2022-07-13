@@ -1,4 +1,4 @@
-#  Created by leolin49 on 2022/7/13.
+#  Created by leolin49 on 2022/7/7.
 #  Copyright (C) 2022 leolin49. All rights reserved.
 #
 # ----
@@ -45,7 +45,6 @@
 # | 4bytes		| 4bytes	| 2bytes		| 4 bytes    |
 # +------------+-----------+---------------+------------+
 #  start ip 	  end ip	  data length     data ptr
-import io
 import os
 import struct
 import sys
